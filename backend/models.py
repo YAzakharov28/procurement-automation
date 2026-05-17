@@ -18,3 +18,7 @@ class Shop(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
 
+    name = models.CharField(max_length=50)
+    shops = models.ManyToManyField(Shop, related_name="categories")
+
+
