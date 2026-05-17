@@ -68,10 +68,28 @@ class ProductParameter(models.Model):
 
 
 class Order(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="orders",
+    )
     status = models.CharField(
         max_length=50,
         choices=OrderStatusChoices.choices,
         default=OrderStatusChoices.CREATED,
     )
     dt = models.DateTimeField(auto_now_add=True)
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="order_items",
+    )
+    product_info = models.ForeignKey(
+        ProductInfo,
+        on_delete=models.CASCADE,
+        related_name="order_items",
+    )
+    quantity = models.PositiveIntegerField()
