@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from backend.choices import UserRoleChoices
+from backend.choices import UserRoleChoices, OrderStatusChoices
 
 
 class User(AbstractUser):
@@ -65,3 +65,13 @@ class ProductParameter(models.Model):
         related_name="product_parameters",
     )
     value = models.CharField(max_length=50)
+
+
+class Order(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
+    status = models.CharField(
+        max_length=50,
+        choices=OrderStatusChoices.choices,
+        default=OrderStatusChoices.CREATED,
+    )
+    dt = models.DateTimeField(auto_now_add=True)
