@@ -1,6 +1,6 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-# Create your models here.
 from backend.choices import UserRoleChoices
 
 
@@ -10,5 +10,11 @@ class User(AbstractUser):
         choices=UserRoleChoices.choices,
         default=UserRoleChoices.BUYER,
     )
+
+
+class Shop(models.Model):
+    name = models.CharField(max_length=50)
+    url = models.URLField(null=True, blank=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
 
 
