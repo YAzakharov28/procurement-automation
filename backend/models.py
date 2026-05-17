@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from backend.choices import UserRoleChoices, OrderStatusChoices
+from backend.choices import UserRoleChoices, OrderStatusChoices, ContactTypeChoices
 
 
 class User(AbstractUser):
@@ -93,3 +93,13 @@ class OrderItem(models.Model):
         related_name="order_items",
     )
     quantity = models.PositiveIntegerField()
+
+
+class Contact(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="contacts",
+    )
+    type = models.CharField(max_length=20, choices=ContactTypeChoices.choices)
+    values = models.CharField(max_length=250)

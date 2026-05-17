@@ -13,3 +13,8 @@ class OrderStatusChoices(TextChoices):
     SHIPPED = "shipped", "Передан в доставку"
     DELIVERED = "delivered", "Получен"
     CANCELLED = "cancelled", "Отменен"
+
+
+class ContactTypeChoices(TextChoices):
+    TELEPHONE = "telephone", "Телефон"
+    ADDRESS = "address", "Адрес"
