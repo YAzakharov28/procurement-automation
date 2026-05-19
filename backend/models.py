@@ -1,21 +1,26 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from backend.choices import UserRoleChoices, OrderStatusChoices, ContactTypeChoices
+
+class OrderStatusChoices(models.TextChoices):
+    CREATED = "created", "Заказ оформлен"
+    CONFIRMED = "confirmed", "Подтвержден"
+    PROCESSING = "processing", "Заказ собирается"
+    SHIPPED = "shipped", "Передан в доставку"
+    DELIVERED = "delivered", "Получен"
+    CANCELLED = "cancelled", "Отменен"
 
 
-class User(AbstractUser):
-    role = models.CharField(
-        max_length=20,
-        choices=UserRoleChoices.choices,
-        default=UserRoleChoices.BUYER,
-    )
+class ContactTypeChoices(models.TextChoices):
+    TELEPHONE = "telephone", "Телефон"
+    ADDRESS = "address", "Адрес"
 
 
 class Shop(models.Model):
     name = models.CharField(max_length=50)
     url = models.URLField(null=True, blank=True)
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
 
 class Category(models.Model):
@@ -69,7 +74,7 @@ class ProductParameter(models.Model):
 
 class Order(models.Model):
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="orders",
     )
@@ -97,9 +102,9 @@ class OrderItem(models.Model):
 
 class Contact(models.Model):
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="contacts",
     )
     type = models.CharField(max_length=20, choices=ContactTypeChoices.choices)
-    values = models.CharField(max_length=250)
+    value = models.CharField(max_length=250)
