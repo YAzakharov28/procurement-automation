@@ -55,4 +55,18 @@ class LoginView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = LoginSerializer
 
-# Create your views here.
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = authenticate(
+            request,
+            username=serializer.data["email"],
+            password=serializer.data["password"],
+        )
+
+        if user is not None:
+            if user.is_active:
+                token, _ = Token.objects.get_or_create(user=user)
+                return Response(data={"token": token.key})
+        return Response(data={"message": "Неправильно указан email или пароль"})
