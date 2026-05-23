@@ -8,6 +8,7 @@ from django_rest_passwordreset.tokens import get_token_generator
 class UserRoleChoices(models.TextChoices):
     BUYER = "buyer", "Покупатель"
     SHOP = "shop", "Магазин"
+    ADMIN = "admin","Администратор"
 
 
 class UserManager(BaseUserManager):
@@ -26,6 +27,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
+        extra_fields.setdefault('role', UserRoleChoices.ADMIN)
 
         if not extra_fields.get("is_staff"):
             raise ValueError("Superuser must have is_staff=True")
