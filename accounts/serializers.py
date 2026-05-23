@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import password_validation
 from rest_framework import serializers
 
+from accounts.models import UserRoleChoices
+
 User = get_user_model()
 
 
@@ -18,7 +20,14 @@ def _validate_password(password: str):
 
 
 class UserRegistrySerializer(serializers.ModelSerializer):
-    role = serializers.CharField(required=False)
+    role = serializers.ChoiceField(
+        choices=(
+            (UserRoleChoices.BUYER, "Покупатель"),
+            (UserRoleChoices.SHOP, "Магазин"),
+        ),
+        required=False,
+        default=UserRoleChoices.BUYER,
+    )
     password = serializers.CharField(min_length=8)
 
     class Meta:
@@ -38,6 +47,11 @@ class UserRegistrySerializer(serializers.ModelSerializer):
 
     def validate_password(self, value: str):
         return _validate_password(value)
+
+    def validate_role(self, value: UserRoleChoices):
+        if value == UserRoleChoices.ADMIN:
+            raise serializers.ValidationError("Role 'admin' is not allowed for registration.")
+        return value
 
     def create(self, validated_data):
         password = validated_data.pop("password")
