@@ -6,9 +6,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from backend.models import Shop
+from backend.models import Category, Shop
 from backend.permissions import IsShopOwnerOrAdminOrReadOnly
-from backend.serializers import ShopSerializer
+from backend.serializers import CategorySerializer, ShopSerializer
 from backend.tasks import update_shop_positions_task
 
 
@@ -37,7 +37,11 @@ class ShopViewSet(ModelViewSet):
             status=status.HTTP_202_ACCEPTED,
         )
 
-    @action(methods=["get"], detail=False, url_path=r"positions/(?P<task_id>[^/.]+)",)
+    @action(
+        methods=["get"],
+        detail=False,
+        url_path=r"positions/(?P<task_id>[^/.]+)",
+    )
     def task_status(self, request, task_id=None):
         result = AsyncResult(task_id)
         data = {
@@ -55,3 +59,21 @@ class ShopViewSet(ModelViewSet):
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(data, status=status.HTTP_200_OK)
+
+
+class CategoryViewSet(ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["name"]
+    permission_classes = [IsShopOwnerOrAdminOrReadOnly]
+
+    def perform_create(self, serializer: CategorySerializer):
+        category = serializer.save()
+        shop = Shop.objects.get(user=self.request.user)
+        category.shops.add(shop)
+
+    def get_queryset(self):
+        if not self.request.user.is_authenticated:
+            return Category.objects.none()
+        return Category.objects.all()
