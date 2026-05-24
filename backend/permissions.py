@@ -1,5 +1,7 @@
 from rest_framework import permissions
 
+from backend.models import Shop
+
 
 class BaseAPIPermission(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -19,7 +21,7 @@ class IsShopOwnerOrAdminOrReadOnly(BaseAPIPermission):
         if request.user.is_superuser:
             return True
         return (
-                getattr(request.user, "role", None) == "shop" and obj.user == request.user
+            getattr(request.user, "role", None) == "shop" and obj.user == request.user
         )
 
 
@@ -32,3 +34,16 @@ class IsCategoryOwnerOrAdminOrReadOnly(permissions.BasePermission):
         if getattr(request.user, "role", None) != "shop":
             return False
         return obj.shops.filter(user=request.user).exists()
+
+
+class IsProductOwnerOrAdminOrReadOnly(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        if request.user.is_superuser:
+            return True
+        if getattr(request.user, "role", None) != "shop":
+            return False
+        return obj.product_infos.filter(
+            shop=Shop.objects.get(user=request.user)
+        ).exists()
