@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from backend.models import Category, Shop
-from backend.permissions import IsShopOwnerOrAdminOrReadOnly
+from backend.permissions import IsCategoryOwnerOrAdminOrReadOnly, IsShopOwnerOrAdminOrReadOnly
 from backend.serializers import CategorySerializer, ShopSerializer
 from backend.tasks import update_shop_positions_task
 
@@ -66,7 +66,7 @@ class CategoryViewSet(ModelViewSet):
     serializer_class = CategorySerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["name"]
-    permission_classes = [IsShopOwnerOrAdminOrReadOnly]
+    permission_classes = [IsCategoryOwnerOrAdminOrReadOnly]
 
     def perform_create(self, serializer: CategorySerializer):
         category = serializer.save()
