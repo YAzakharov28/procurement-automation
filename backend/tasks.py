@@ -19,59 +19,54 @@ from backend.models import (
 
 @shared_task
 def update_shop_positions_task(shop_id: int):
-    shop = Shop.objects.get(id=shop_id)
+    try:
+        shop = Shop.objects.get(id=shop_id)
+    except Shop.DoesNotExist as err:
+        raise ValueError(f"Магазин с ID={shop_id} не найден") from err
+
     URL = shop.url
     if not URL:
-        return Response(
-            {"message": "У магазина не указана ссылка"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        raise ValueError("У магазина не указана ссылка")
+
     validate_url = URLValidator()
     try:
         validate_url(URL)
     except ValidationError as err:
-        return Response(
-            data={"message": {str(err)}},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        raise ValueError(f"Ошибка валидации ссылки: {str(err)}") from err
 
     try:
         response = requests.get(URL, timeout=10)
         response.raise_for_status()
     except requests.RequestException as err:
-        return Response(
-            {"message": f"Ошибка загрузки файла: {err}"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        raise ValueError(f"Ошибка загрузки файла: {err}") from err
 
     try:
         data = yaml.safe_load(response.content)
-    except yaml.YAMLError:
-        return Response(
-            {"message": "Некорректный YAML-файл"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    except yaml.YAMLError as err:
+        raise ValueError("Некорректный YAML-файл") from err
 
-    if data["shop"] != shop.name:
-        return Response(
-            data={"message": "Неверное имя магазина"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    if data.get("shop") != shop.name:
+        raise ValueError("Неверное имя магазина")
+
+    categories = data.get("categories", [])
+    goods = data.get("goods", [])
 
     with transaction.atomic():
-        for category in data.get("categories", []):
+        for category in categories:
             category_object, _ = Category.objects.get_or_create(
                 id=category["id"],
                 defaults={"name": category["name"]},
             )
             if category_object.name != category["name"]:
                 category_object.name = category["name"]
-                category_object.save()
+                category_object.save(update_fields=["name"])
             category_object.shops.add(shop)
 
         ProductInfo.objects.filter(shop=shop).delete()
 
-        for item in data.get("goods", []):
+        created_count = 0
+
+        for item in goods:
             product, _ = Product.objects.get_or_create(
                 name=item["name"],
                 category_id=item["category"],
@@ -94,3 +89,7 @@ def update_shop_positions_task(shop_id: int):
                     parameter=parameter_object,
                     value=value,
                 )
+
+            created_count += 1
+
+    return {"shop_id": shop_id, "created": created_count}

@@ -1,3 +1,4 @@
+from celery.result import AsyncResult
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
@@ -30,5 +31,27 @@ class ShopViewSet(ModelViewSet):
     def positions(self, request: Request, pk: int | None = None):
         shop = self.get_object()
         self.check_object_permissions(request, shop)
-        update_shop_positions_task.delay(shop.id)
-        return Response({"message": "Импорт запущен"}, status=status.HTTP_202_ACCEPTED)
+        task = update_shop_positions_task.delay(shop.id)
+        return Response(
+            {"task_id": task.id, "status": "started"},
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+    @action(methods=["get"], detail=False, url_path=r"positions/(?P<task_id>[^/.]+)",)
+    def task_status(self, request, task_id=None):
+        result = AsyncResult(task_id)
+        data = {
+            "task_id": task_id,
+            "state": result.state,
+        }
+
+        if result.state == "SUCCESS":
+            data["result"] = result.result
+            return Response(data, status=status.HTTP_200_OK)
+
+        if result.state == "FAILURE":
+            error = result.result
+            data["error"] = str(error)
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(data, status=status.HTTP_200_OK)
