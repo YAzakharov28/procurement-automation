@@ -1,7 +1,7 @@
 from rest_framework import permissions
 
 
-class IsShopOwnerOrAdminOrReadOnly(permissions.BasePermission):
+class BaseAPIPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return request.user and request.user.is_authenticated
@@ -19,3 +19,7 @@ class IsShopOwnerOrAdminOrReadOnly(permissions.BasePermission):
         return (
             getattr(request.user, "role", None) == "shop" and obj.user == request.user
         )
+
+
+class IsShopOwnerOrAdminOrReadOnly(BaseAPIPermission):
+    pass
