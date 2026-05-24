@@ -34,7 +34,7 @@ class Product(models.Model):
         on_delete=models.CASCADE,
         related_name="products",
     )
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=150)
 
 
 class ProductInfo(models.Model):
@@ -48,10 +48,19 @@ class ProductInfo(models.Model):
         on_delete=models.CASCADE,
         related_name="product_infos",
     )
+    external_id = models.PositiveIntegerField(db_index=True)
     model = models.CharField(max_length=50)
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     price_rrc = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["shop", "external_id"],
+                name="unique_shop_external_id",
+            )
+        ]
 
 
 class Parameter(models.Model):
