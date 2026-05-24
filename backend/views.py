@@ -2,13 +2,19 @@ from celery.result import AsyncResult
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from backend.models import Category, Shop
-from backend.permissions import IsCategoryOwnerOrAdminOrReadOnly, IsShopOwnerOrAdminOrReadOnly
-from backend.serializers import CategorySerializer, ShopSerializer
+from backend.filters import ProductFilter
+from backend.models import Category, Product, Shop
+from backend.permissions import (
+    IsCategoryOwnerOrAdminOrReadOnly,
+    IsProductOwnerOrAdminOrReadOnly,
+    IsShopOwnerOrAdminOrReadOnly,
+)
+from backend.serializers import CategorySerializer, ProductSerializer, ShopSerializer
 from backend.tasks import update_shop_positions_task
 
 
@@ -77,3 +83,20 @@ class CategoryViewSet(ModelViewSet):
         if not self.request.user.is_authenticated:
             return Category.objects.none()
         return Category.objects.all()
+
+
+class ProductViewSet(ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_class = ProductFilter
+    search_fields = ("name", "product_infos__model")
+    permission_classes = [IsProductOwnerOrAdminOrReadOnly]
+
+    def get_queryset(self):
+        return Product.objects.select_related("category").prefetch_related(
+            "product_infos",
+            "product_infos__shop",
+            "product_infos__product_parameters",
+            "product_infos__product_parameters__parameter",
+        )
