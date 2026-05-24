@@ -4,6 +4,7 @@ from django.db import models
 
 
 class OrderStatusChoices(models.TextChoices):
+    BASKET = "basket", "Корзина"
     CREATED = "created", "Заказ оформлен"
     CONFIRMED = "confirmed", "Подтвержден"
     PROCESSING = "processing", "Заказ собирается"
@@ -90,7 +91,7 @@ class Order(models.Model):
     status = models.CharField(
         max_length=50,
         choices=OrderStatusChoices.choices,
-        default=OrderStatusChoices.CREATED,
+        default=OrderStatusChoices.BASKET,
     )
     dt = models.DateTimeField(auto_now_add=True)
 
