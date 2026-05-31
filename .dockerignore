@@ -1,0 +1,6 @@
+.venv
+.gigacode
+__pycache__
+.idea
+**/Dockerfile*
+.dockerignore

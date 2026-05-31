@@ -36,6 +36,64 @@ services:
       - app-network
     restart: unless-stopped
 
+  celery:
+    build: .
+    container_name: procurement_automation_celery
+    env_file: .env
+    command: celery -A procurement_automation worker -l info
+    volumes:
+      - ./:/app
+      - ./models:/app/models
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  migrate_accounts:
+    build: .
+    container_name: procurement_automation_migrate_accounts
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: python manage.py migrate accounts
+    networks:
+      - app-network
+    restart: "no"
+
+  migrate_others:
+    build: .
+    container_name: procurement_automation_migrate_others
+    env_file: .env
+    depends_on:
+      migrate_accounts:
+        condition: service_completed_successfully
+    command: python manage.py migrate
+    networks:
+      - app-network
+    restart: "no"
+
+
+  app:
+    build: .
+    container_name: procurement_automation
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - ./models:/app/models
+    depends_on:
+      migrate_others:
+        condition: service_completed_successfully
+      celery:
+        condition: service_started
+    networks:
+      - app-network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
