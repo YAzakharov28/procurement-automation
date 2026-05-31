@@ -1,0 +1,9 @@
+Ваш заказ №{{ order.id }} оформлен.
+
+Статус: {{ order.get_status_display }}
+Сумма заказа: {{ total_amount }}
+
+Товары:
+{% for item in items %}
+- {{ item.product_info.product.name }} — {{ item.quantity }} шт. × {{ item.product_info.price }} = {{ item.line_total }}
+{% endfor %}

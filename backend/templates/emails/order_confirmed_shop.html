@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <body>
+    <h1>Новый заказ №{{ order.id }}</h1>
+    <p>Магазин: {{ shop.name }}</p>
+    <p>Сумма по магазину: {{ shop_total }}</p>
+
+    <p>
+      Контакт клиента:
+      {{ order.contact.city }}, {{ order.contact.street }}, {{ order.contact.house }}
+    </p>
+
+    <h2>Товары</h2>
+    <ul>
+      {% for item in items %}
+        <li>{{ item.product_info.product.name }} — {{ item.quantity }} шт. × {{ item.product_info.price }} = {{ item.line_total }}</li>
+      {% empty %}
+        <li>Товары отсутствуют</li>
+      {% endfor %}
+    </ul>
+  </body>
+</html>

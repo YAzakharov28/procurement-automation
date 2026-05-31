@@ -1,14 +1,19 @@
+from collections import defaultdict
+from decimal import Decimal
+
 import requests
 import yaml
 from celery import shared_task
+from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.mail import EmailMultiAlternatives
 from django.core.validators import URLValidator
 from django.db import transaction
-from rest_framework import status
-from rest_framework.response import Response
+from django.template.loader import render_to_string
 
 from backend.models import (
     Category,
+    Order,
     Parameter,
     Product,
     ProductInfo,
@@ -93,3 +98,77 @@ def update_shop_positions_task(shop_id: int):
             created_count += 1
 
     return {"shop_id": shop_id, "created": created_count}
+
+
+@shared_task
+def send_order_confirmed_emails_task(order_id):
+    order = (
+        Order.objects.select_related("user", "contact")
+        .prefetch_related(
+            "order_items__product_info__shop__user",
+            "order_items__product_info",
+        )
+        .get(id=order_id)
+    )
+
+    items = list(order.order_items.all())
+
+    total_amount = Decimal("0.00")
+    for item in items:
+        item.line_total = item.quantity * item.product_info.price
+        total_amount += item.line_total
+
+    user_subject = f"Заказ #{order.id} оформлен"
+    user_context = {"order": order, "total_amount": total_amount}
+    user_html_content = render_to_string(
+        "emails/order_confirmed_user.html",
+        context=user_context,
+    )
+    user_text_content = render_to_string(
+        "emails/order_confirmed_user.txt",
+        context=user_context,
+    )
+
+    user_msg = EmailMultiAlternatives(
+        subject=user_subject,
+        body=user_text_content,
+        from_email=settings.EMAIL_HOST_USER,
+        to=[order.user.email],
+    )
+    user_msg.attach_alternative(user_html_content, "text/html")
+    user_msg.send()
+
+    shop_groups = defaultdict(list)
+    for item in items:
+        shop_groups[item.product_info.shop].append(item)
+
+    for shop, shop_items in shop_groups.items():
+        shop_total = Decimal("0.00")
+        for item in shop_items:
+            item.line_total = item.quantity * item.product_info.price
+            shop_total += item.line_total
+
+        shop_subject = f"Новый заказ #{order.id}"
+        shop_context = {
+            "order": order,
+            "shop": shop,
+            "items": shop_items,
+            "shop_total": shop_total,
+        }
+        shop_html_content = render_to_string(
+            "emails/order_confirmed_shop.html",
+            context=shop_context,
+        )
+        shop_text_content = render_to_string(
+            "emails/order_confirmed_shop.txt",
+            context=shop_context,
+        )
+
+        shop_msg = EmailMultiAlternatives(
+            subject=shop_subject,
+            body=shop_text_content,
+            from_email=settings.EMAIL_HOST_USER,
+            to=[shop.user.email],
+        )
+        shop_msg.attach_alternative(shop_html_content, "text/html")
+        shop_msg.send()

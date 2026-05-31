@@ -1,0 +1,14 @@
+Новый заказ №{{ order.id }}
+
+Магазин: {{ shop.name }}
+Сумма по магазину: {{ shop_total }}
+
+Контакт клиента:
+{{ order.contact.city }}, {{ order.contact.street }}, {{ order.contact.house }}
+
+Товары:
+{% for item in items %}
+- {{ item.product_info.product.name }} — {{ item.quantity }} шт. × {{ item.product_info.price }} = {{ item.line_total }}
+{% empty %}
+- Товары отсутствуют
+{% endfor %}

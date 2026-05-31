@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+  <body>
+    <h1>Ваш заказ №{{ order.id }} оформлен</h1>
+    <p>Статус: {{ order.get_status_display }}</p>
+    <p>Сумма заказа: {{ total_amount }}</p>
+
+    <h2>Товары</h2>
+    <ul>
+      {% for item in items %}
+        <li>{{ item.product_info.product.name }} — {{ item.quantity }} шт. × {{ item.product_info.price }} = {{ item.line_total }}</li>
+      {% endfor %}
+    </ul>
+  </body>
+</html>
