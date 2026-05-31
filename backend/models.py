@@ -13,15 +13,11 @@ class OrderStatusChoices(models.TextChoices):
     CANCELLED = "cancelled", "Отменен"
 
 
-class ContactTypeChoices(models.TextChoices):
-    TELEPHONE = "telephone", "Телефон"
-    ADDRESS = "address", "Адрес"
-
-
 class Shop(models.Model):
     name = models.CharField(max_length=50)
     url = models.URLField(null=True, blank=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    is_accepting_orders = models.BooleanField(default=True)
 
 
 class Category(models.Model):
@@ -93,6 +89,13 @@ class Order(models.Model):
         choices=OrderStatusChoices.choices,
         default=OrderStatusChoices.BASKET,
     )
+    contact = models.ForeignKey(
+        "Contact",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="orders",
+    )
     dt = models.DateTimeField(auto_now_add=True)
 
 
@@ -111,10 +114,17 @@ class OrderItem(models.Model):
 
 
 class Contact(models.Model):
+    objects = models.manager.Manager()
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
         related_name="contacts",
+        blank=True,
+        on_delete=models.CASCADE,
     )
-    type = models.CharField(max_length=20, choices=ContactTypeChoices.choices)
-    value = models.CharField(max_length=250)
+    city = models.CharField(max_length=50)
+    street = models.CharField(max_length=100)
+    house = models.CharField(max_length=15, blank=True)
+    structure = models.CharField(max_length=15, blank=True)
+    building = models.CharField(max_length=15, blank=True)
+    apartment = models.CharField(max_length=15, blank=True)
+    phone = models.CharField(max_length=20)
