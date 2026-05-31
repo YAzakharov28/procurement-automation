@@ -22,4 +22,4 @@ class ProductFilter(django_filters.FilterSet):
 
     class Meta:
         model = Product
-        fields = ["shop", "shop_id"]
+        fields = ["shop", "shop_id", "category", "category_id"]
